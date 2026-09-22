@@ -4,9 +4,24 @@ from flask import Flask
 from dotenv import load_dotenv
 from sqlalchemy import text
 
-from .extensions import db, migrate
-
-
+from .extensions import db, migrate, jwt
+from .models import (
+    User,
+    StudentProfile,
+    EmployerProfile,
+    Skill,
+    StudentSkill,
+    InternshipSkill,
+    Internship,
+    Application,
+    MatchScore
+)
+from .routes.students import students_bp
+from .routes.employers import employers_bp
+from .routes.internships import internships_bp
+from .routes.applications import applications_bp
+from .routes.skills import skills_bp
+from .routes.matching import matching_bp
 # Load .env before creating the Flask app
 load_dotenv()
 
@@ -32,11 +47,41 @@ def create_app():
     )
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
+    app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
+    
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-
+    jwt.init_app(app)
+    from .routes.auth import auth_bp
+    app.register_blueprint(
+        auth_bp,
+        url_prefix="/api/auth"
+    )
+    app.register_blueprint(
+        students_bp,
+        url_prefix="/api/students"
+    )
+    app.register_blueprint(
+        employers_bp,
+        url_prefix="/api/employers"
+    )
+    app.register_blueprint(
+        internships_bp,
+        url_prefix="/api/internships"
+    )
+    app.register_blueprint(
+        applications_bp,
+        url_prefix="/api/applications"
+    )
+    app.register_blueprint(
+        skills_bp,
+        url_prefix="/api/skills"
+    )
+    app.register_blueprint(
+        matching_bp,
+        url_prefix="/api/matching"
+    )
     @app.route("/")
     def home():
         return {
