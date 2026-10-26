@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 
 WORKDIR /app
-
+RUN python -m pip install --no-cache-dir --upgrade "setuptools" "wheel>=0.46.2" "jaraco.context>=6.1.0"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
