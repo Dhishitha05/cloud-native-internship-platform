@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internmatch-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: internmatch-frontend
+  template:
+    metadata:
+      labels:
+        app: internmatch-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: internship-platform-frontend:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80

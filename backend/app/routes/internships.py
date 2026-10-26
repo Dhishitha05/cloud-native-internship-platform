@@ -114,9 +114,12 @@ def get_internships():
     result = []
 
     for internship in internships:
+        employer = EmployerProfile.query.get(internship.employer_id)
+
         result.append({
             "id": internship.id,
             "employer_id": internship.employer_id,
+            "company": employer.company_name if employer else "Hiring company",
             "title": internship.title,
             "description": internship.description,
             "domain": internship.domain,
@@ -131,6 +134,7 @@ def get_internships():
             ),
             "status": internship.status
         })
+
 
     return jsonify(result), 200
 

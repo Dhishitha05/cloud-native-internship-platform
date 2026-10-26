@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import (
     create_access_token,
@@ -7,7 +7,9 @@ from flask_jwt_extended import (
 )
 
 from app.extensions import db
-from app.models import User
+from app.models.user import User
+from app.models.student import StudentProfile
+from app.models.employer import EmployerProfile
 from app.decorators import role_required
 
 auth_bp = Blueprint("auth", __name__)
@@ -25,9 +27,7 @@ def register():
     data = request.get_json()
 
     if not data:
-        return jsonify({
-            "error": "Request body is required"
-        }), 400
+        return jsonify({"error": "Request body is required"}), 400
 
     name = data.get("name")
     email = data.get("email")
@@ -39,34 +39,80 @@ def register():
             "error": "name, email, password and role are required"
         }), 400
 
-    existing_user = User.query.filter_by(email=email).first()
+    role = role.upper()
 
-    if existing_user:
+    if role not in ("STUDENT", "EMPLOYER"):
         return jsonify({
-            "error": "Email already registered"
-        }), 409
+            "error": "Role must be STUDENT or EMPLOYER"
+        }), 400
 
-    password_hash = generate_password_hash(password)
+    company_name = data.get("company_name")
 
-    user = User(
-        name=name,
-        email=email,
-        password_hash=password_hash,
-        role=role.upper()
-    )
+    if role == "EMPLOYER" and not company_name:
+        return jsonify({
+            "error": "company_name is required for employers"
+        }), 400
+    current_app.logger.info("Registration email received: %r", email)
+    if User.query.filter_by(email=email).first():
+        current_app.logger.warning(
+        "Email already exists in database: %r", email
+        )
+        return jsonify({"error": "Email already registered"}), 409
 
-    db.session.add(user)
-    db.session.commit()
+    try:
+        user = User(
+            name=name,
+            email=email,
+            password_hash=generate_password_hash(password),
+            role=role
+        )
 
-    return jsonify({
-        "message": "User registered successfully",
-        "user": {
-            "id": user.id,
-            "name": user.name,
-            "email": user.email,
-            "role": user.role
-        }
-    }), 201
+        db.session.add(user)
+        db.session.flush()
+
+        if role == "STUDENT":
+            profile = StudentProfile(
+                user_id=user.id,
+                college="",
+                degree="",
+                branch="",
+                graduation_year=2028,
+                bio="",
+                resume_url="",
+                interests="",
+                preferred_domain=""
+            )
+        else:
+            profile = EmployerProfile(
+                user_id=user.id,
+                company_name=company_name,
+                company_description="",
+                company_website="",
+                industry="",
+                location=""
+            )
+
+        db.session.add(profile)
+        db.session.commit()
+
+        return jsonify({
+            "message": "User and profile registered successfully",
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "role": user.role
+            }
+        }), 201
+
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Registration and profile creation failed"
+        )
+        return jsonify({
+            "error": "Registration failed. Please try again."
+        }), 500
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json()

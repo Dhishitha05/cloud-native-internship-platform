@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from flask_cors import CORS
 from dotenv import load_dotenv
 from sqlalchemy import text
 
@@ -28,7 +29,13 @@ load_dotenv()
 
 def create_app():
     app = Flask(__name__)
-
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173"
+        ]}}
+    )
     # Read database configuration
     db_user = os.getenv("DB_USER")
     db_password = os.getenv("DB_PASSWORD")

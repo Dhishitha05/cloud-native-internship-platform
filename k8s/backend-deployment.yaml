@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internmatch-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: internmatch-backend
+  template:
+    metadata:
+      labels:
+        app: internmatch-backend
+    spec:
+      containers:
+        - name: backend
+          image: internship-platform-backend:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: internmatch-backend-secret
+          env:
+            - name: DB_HOST
+              value: host.minikube.internal

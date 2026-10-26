@@ -1,0 +1,93 @@
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: "internmatch-helm"
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: false
+  automount: false
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext: {}
+
+# Frontend configuration
+frontend:
+  image:
+    repository: internship-platform-frontend
+    tag: latest
+    pullPolicy: Never
+  replicaCount: 1
+  service:
+    type: NodePort
+    port: 80
+    targetPort: 80
+
+# Backend configuration
+backend:
+  image:
+    repository: internship-platform-backend
+    tag: latest
+    pullPolicy: Never
+  replicaCount: 1
+  containerPort: 5000
+  service:
+    type: ClusterIP
+    port: 5000
+    targetPort: 5000
+  existingSecret: internmatch-backend-secret
+  databaseHost: host.minikube.internal
+
+# Default chart settings
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+  hostnames: []
+  rules: []
+
+resources: {}
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+volumes: []
+volumeMounts: []
+nodeSelector: {}
+tolerations: []
+affinity: {}
