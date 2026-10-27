@@ -1,13 +1,38 @@
 services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: demo_root_password
+      MYSQL_DATABASE: internship_platform
+      MYSQL_USER: internmatch
+      MYSQL_PASSWORD: internmatch_demo_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pdemo_root_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
     ports:
       - "5000:5000"
-    env_file:
-       - ./backend/.env.example
     environment:
-      DB_HOST: host.docker.internal
+      DB_USER: internmatch
+      DB_PASSWORD: internmatch_demo_password
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: internship_platform
+      JWT_SECRET_KEY: InternMatch_Demo_2026_SecureKey
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -18,3 +43,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  mysql_data:
